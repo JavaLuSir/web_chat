@@ -1,28 +1,33 @@
 #!/usr/bin/env python3
 """
 Web Chat - 在线聊天工具
-支持：文字聊天、文件传输、图片发送/接收
+支持：文字聊天、文件传输、图片发送/接收、私聊
 """
 
 import os
 import uuid
 import datetime
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'webchat-secret-key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max
 
-# 确保上传目录存在
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# 存储在线用户和消息
-users = {}  # {sid: username}
-rooms = {'general': []}  # 房间消息历史
+# 存储数据
+users = {}  # {sid: {'username': xxx, 'room': 'general'}}
+rooms = {'general': []}  # {room_name: [messages]}
+
+def get_user_by_name(username):
+    for sid, info in users.items():
+        if info['username'] == username:
+            return sid
+    return None
 
 @app.route('/')
 def index():
@@ -41,13 +46,11 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': '未选择文件'}), 400
     
-    # 生成唯一文件名
     ext = os.path.splitext(file.filename)[1]
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
     
-    # 判断是否是图片
     is_image = ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
     
     file_url = f"/upload/{filename}"
@@ -65,44 +68,70 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    username = users.pop(request.sid, None)
-    if username:
+    user_info = users.pop(request.sid, None)
+    if user_info:
+        username = user_info['username']
+        room = user_info.get('room', 'general')
+        
         emit('system_message', {
             'text': f'👋 {username} 离开了聊天',
-            'time': datetime.datetime.now().strftime('%H:%M')
-        }, to='general')
-        emit('user_left', {'username': username}, to='general')
+            'time': datetime.datetime.now().strftime('%H:%M'),
+            'room': room
+        }, to=room)
+        
+        emit('user_left', {'username': username, 'room': room}, to=room)
+        emit('users_update', {
+            'users': [u['username'] for u in users.values() if u.get('room') == room],
+            'room': room
+        }, to=room)
 
 @socketio.on('join')
 def handle_join(data):
     username = data.get('username', f'用户{request.sid[:4]}')
-    users[request.sid] = username
+    room = data.get('room', 'general')
     
-    join_room('general')
+    users[request.sid] = {'username': username, 'room': room}
+    join_room(room)
     
     # 发送欢迎消息
     emit('system_message', {
         'text': f'🎉 欢迎 {username} 加入聊天！',
-        'time': datetime.datetime.now().strftime('%H:%M')
-    }, to='general')
+        'time': datetime.datetime.now().strftime('%H:%M'),
+        'room': room
+    }, to=room)
     
     # 发送在线用户列表
-    emit('users_update', {'users': list(users.values())}, to='general')
+    room_users = [u['username'] for u in users.values() if u.get('room') == room]
+    emit('users_update', {'users': room_users, 'room': room}, to=room)
     
     # 发送历史消息
-    for msg in rooms['general'][-50:]:
-        emit('message', msg)
+    if room in rooms:
+        for msg in rooms[room][-50:]:
+            emit('message', msg)
+
+@socketio.on('leave_room')
+def handle_leave_room(data):
+    old_room = data.get('room', 'general')
+    leave_room(old_room)
+    
+    if request.sid in users:
+        users[request.sid]['room'] = 'general'
+    
+    # 通知离开
+    emit('left_room', {'room': old_room})
 
 @socketio.on('chat_message')
 def handle_message(data):
-    username = users.get(request.sid, '未知用户')
+    username = users.get(request.sid, {}).get('username', '未知用户')
     message_type = data.get('type', 'text')
+    room = data.get('room', 'general')
+    target = data.get('target')  # 私聊目标用户
     
     msg_data = {
         'username': username,
         'type': message_type,
         'time': datetime.datetime.now().strftime('%H:%M'),
-        'sid': request.sid
+        'room': room
     }
     
     if message_type == 'text':
@@ -113,17 +142,61 @@ def handle_message(data):
         msg_data['url'] = data.get('url', '')
         msg_data['filename'] = data.get('filename', '')
     
-    rooms['general'].append(msg_data)
-    # 只保留最近100条消息
-    if len(rooms['general']) > 100:
-        rooms['general'] = rooms['general'][-100:]
-    
-    emit('message', msg_data, to='general')
+    # 私聊
+    if target:
+        msg_data['is_private'] = True
+        target_sid = get_user_by_name(target)
+        
+        # 发送给目标用户
+        if target_sid:
+            emit('message', msg_data, to=target_sid)
+        
+        # 发送给自己
+        emit('message', msg_data, to=request.sid)
+    else:
+        # 群聊
+        if room not in rooms:
+            rooms[room] = []
+        rooms[room].append(msg_data)
+        if len(rooms[room]) > 100:
+            rooms[room] = rooms[room][-100:]
+        
+        emit('message', msg_data, to=room)
 
 @socketio.on('typing')
 def handle_typing(data):
-    username = users.get(request.sid, '未知用户')
-    emit('user_typing', {'username': username}, to='general', include_self=False)
+    username = users.get(request.sid, {}).get('username', '未知用户')
+    room = data.get('room', 'general')
+    target = data.get('target')
+    
+    if target:
+        target_sid = get_user_by_name(target)
+        if target_sid:
+            emit('user_typing', {'username': username}, to=target_sid)
+    else:
+        emit('user_typing', {'username': username}, to=room, include_self=False)
+
+@socketio.on('request_private_chat')
+def handle_private_chat(data):
+    target = data.get('target')
+    username = users.get(request.sid, {}).get('username', '未知用户')
+    
+    target_sid = get_user_by_name(target)
+    if target_sid:
+        # 创建私聊房间
+        private_room = f"private_{min(request.sid, target_sid)}_{max(request.sid, target_sid)}"
+        
+        emit('private_chat_started', {
+            'room': private_room,
+            'target': target,
+            'target_username': username
+        }, to=target_sid)
+        
+        emit('private_chat_started', {
+            'room': private_room,
+            'target': target,
+            'target_username': users.get(target_sid, {}).get('username', target)
+        }, to=request.sid)
 
 if __name__ == '__main__':
     print("🚀 聊天服务启动: http://localhost:5000")

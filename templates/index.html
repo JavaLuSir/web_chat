@@ -31,7 +31,6 @@
             flex-direction: column;
         }
         
-        /* 顶部标题栏 */
         .header {
             padding: 12px 15px;
             background: #667eea;
@@ -43,9 +42,24 @@
             z-index: 10;
         }
         
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
         .header h2 {
             font-size: 18px;
             font-weight: 600;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
         }
         
         .online-count {
@@ -53,7 +67,6 @@
             opacity: 0.9;
         }
         
-        /* 移动端用户列表按钮 */
         .users-toggle {
             display: none;
             background: rgba(255,255,255,0.2);
@@ -64,12 +77,10 @@
             font-size: 16px;
         }
         
-        /* 左侧用户列表 - 桌面端 */
         .sidebar {
             display: none;
         }
         
-        /* 右侧聊天区域 */
         .chat-area {
             flex: 1;
             display: flex;
@@ -77,7 +88,6 @@
             overflow: hidden;
         }
         
-        /* 消息区域 */
         .messages {
             flex: 1;
             padding: 15px;
@@ -104,11 +114,33 @@
             align-items: center;
         }
         
+        .message.private-message {
+            align-items: flex-end;
+        }
+        
+        .message.private-message .message-content {
+            background: #28a745;
+            color: white;
+            border-bottom-right-radius: 3px;
+        }
+        
+        .message.private-received .message-content {
+            background: #6c757d;
+            color: white;
+            border-bottom-left-radius: 3px;
+        }
+        
         .message-info {
             font-size: 11px;
             color: #999;
             margin-bottom: 4px;
             padding: 0 5px;
+        }
+        
+        .private-tag {
+            font-size: 10px;
+            color: #28a745;
+            margin-bottom: 2px;
         }
         
         .message-content {
@@ -176,7 +208,6 @@
             white-space: nowrap;
         }
         
-        /* 输入区域 */
         .input-area {
             padding: 10px 12px;
             background: white;
@@ -229,6 +260,15 @@
             background: #e0e0e0;
         }
         
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:active {
+            background: #218838;
+        }
+        
         .file-btn {
             position: relative;
             overflow: hidden;
@@ -245,7 +285,6 @@
             height: 100%;
         }
         
-        /* 打字提示 */
         .typing-indicator {
             padding: 4px 15px;
             color: #999;
@@ -253,7 +292,6 @@
             height: 18px;
         }
         
-        /* 图片预览模态框 */
         .modal {
             display: none;
             position: fixed;
@@ -277,7 +315,6 @@
             display: flex;
         }
         
-        /* 登录弹窗 */
         .login-modal {
             position: fixed;
             top: 0;
@@ -343,9 +380,67 @@
             display: none !important;
         }
         
-        /* ===== 响应式适配 ===== */
+        /* 用户列表样式 */
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
         
-        /* 手机端 */
+        .user-item:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .user-item .private-btn {
+            background: #28a745;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .chat-room-tabs {
+            display: flex;
+            padding: 8px 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            gap: 8px;
+            overflow-x: auto;
+        }
+        
+        .chat-tab {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .chat-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .chat-tab .close-tab {
+            font-size: 14px;
+            margin-left: 3px;
+            opacity: 0.7;
+        }
+        
         @media (max-width: 768px) {
             .users-toggle {
                 display: block;
@@ -355,8 +450,8 @@
                 display: block;
                 position: fixed;
                 top: 0;
-                left: -200px;
-                width: 200px;
+                left: -220px;
+                width: 220px;
                 height: 100%;
                 background: #2c3e50;
                 color: white;
@@ -375,14 +470,6 @@
                 margin-bottom: 15px;
                 padding-bottom: 10px;
                 border-bottom: 1px solid rgba(255,255,255,0.2);
-            }
-            
-            .user-item {
-                padding: 10px;
-                margin-bottom: 6px;
-                background: rgba(255,255,255,0.1);
-                border-radius: 8px;
-                font-size: 14px;
             }
             
             .sidebar-overlay {
@@ -412,7 +499,6 @@
             
             .message-file {
                 max-width: 180px;
-                padding: 8px 10px;
             }
             
             .input-area {
@@ -424,14 +510,8 @@
                 padding: 10px 12px;
                 font-size: 14px;
             }
-            
-            .btn {
-                padding: 10px 14px;
-                font-size: 13px;
-            }
         }
         
-        /* 更小的手机 */
         @media (max-width: 400px) {
             .header {
                 padding: 10px 12px;
@@ -444,15 +524,10 @@
             .messages {
                 padding: 10px;
             }
-            
-            .message-content {
-                max-width: 85%;
-            }
         }
     </style>
 </head>
 <body>
-    <!-- 登录弹窗 -->
     <div class="login-modal" id="loginModal">
         <div class="login-box">
             <h2>👋 加入聊天</h2>
@@ -461,29 +536,29 @@
         </div>
     </div>
     
-    <!-- 侧边栏遮罩 -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
     
-    <!-- 左侧用户列表 -->
     <div class="sidebar" id="sidebar">
         <h3>👥 在线用户 (<span id="userCount">0</span>)</h3>
         <div class="user-list" id="userList"></div>
     </div>
     
-    <!-- 图片预览模态框 -->
     <div class="modal" id="imageModal" onclick="closeModal()">
         <img src="" alt="预览">
     </div>
     
     <div class="container">
-        <!-- 顶部标题栏 -->
         <div class="header">
-            <button class="users-toggle" onclick="toggleSidebar()">👥</button>
-            <h2>💬 Web Chat</h2>
+            <div class="header-left">
+                <button class="back-btn hidden" id="backBtn" onclick="leavePrivateChat()">←</button>
+                <button class="users-toggle" onclick="toggleSidebar()">👥</button>
+                <h2 id="roomTitle">💬 大厅</h2>
+            </div>
             <span class="online-count" id="onlineCount">0人在线</span>
         </div>
         
-        <!-- 聊天区域 -->
+        <div class="chat-room-tabs" id="chatTabs"></div>
+        
         <div class="chat-area">
             <div class="messages" id="messages"></div>
             
@@ -495,7 +570,7 @@
                     <input type="file" id="fileInput" onchange="uploadFile(this)">
                 </div>
                 <input type="text" id="messageInput" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
-                <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+                <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">发送</button>
             </div>
         </div>
     </div>
@@ -503,14 +578,15 @@
     <script>
         const socket = io();
         let myUsername = '';
+        let currentRoom = 'general';
+        let privateChats = {}; // {target_username: room}
+        let currentPrivateTarget = null;
         
-        // 切换用户列表
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
             document.getElementById('sidebarOverlay').classList.toggle('active');
         }
         
-        // 登录
         function joinChat() {
             const username = document.getElementById('usernameInput').value.trim();
             if (!username) {
@@ -519,38 +595,41 @@
             }
             myUsername = username;
             document.getElementById('loginModal').classList.add('hidden');
-            socket.emit('join', { username: username });
+            socket.emit('join', { username: username, room: 'general' });
         }
         
-        // 回车发送
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
                 sendMessage();
             }
         }
         
-        // 发送消息
         function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text) return;
             
-            socket.emit('chat_message', {
+            const data = {
                 type: 'text',
-                text: text
-            });
+                text: text,
+                room: currentRoom
+            };
+            
+            if (currentPrivateTarget) {
+                data.target = currentPrivateTarget;
+            }
+            
+            socket.emit('chat_message', data);
             input.value = '';
             input.focus();
         }
         
-        // 上传文件
         function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;
             
             const formData = new FormData();
             formData.append('file', file);
-            
             input.value = '';
             
             fetch('/api/upload', {
@@ -565,54 +644,184 @@
                 }
                 
                 const messageType = data.is_image ? 'image' : 'file';
-                
-                socket.emit('chat_message', {
+                const msgData = {
                     type: messageType,
                     url: data.url,
-                    filename: data.original_name
-                });
+                    filename: data.original_name,
+                    room: currentRoom
+                };
+                
+                if (currentPrivateTarget) {
+                    msgData.target = currentPrivateTarget;
+                }
+                
+                socket.emit('chat_message', msgData);
             })
             .catch(err => {
                 alert('上传失败: ' + err);
             });
         }
         
-        // 接收消息
         socket.on('message', function(data) {
-            addMessage(data);
+            // 过滤只显示当前房间的消息
+            const msgRoom = data.room || 'general';
+            
+            if (data.is_private) {
+                // 私聊消息
+                const otherUser = data.username === myUsername ? currentPrivateTarget : data.username;
+                if (currentPrivateTarget && (data.username === currentPrivateTarget || data.username === myUsername)) {
+                    addMessage(data, true, data.username === myUsername);
+                } else if (!currentPrivateTarget) {
+                    // 在大厅显示私聊提示
+                    addMessage({
+                        ...data,
+                        text: `💌 来自 ${data.username} 的私聊`,
+                        type: 'text'
+                    }, false, false, true);
+                }
+            } else if (msgRoom === currentRoom || currentRoom === 'general') {
+                addMessage(data, false, data.username === myUsername);
+            }
         });
         
-        // 系统消息
         socket.on('system_message', function(data) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message system-message';
-            msgDiv.innerHTML = `<div class="message-content">${data.text}</div>`;
-            document.getElementById('messages').appendChild(msgDiv);
-            scrollToBottom();
+            const msgRoom = data.room || 'general';
+            if (msgRoom === currentRoom) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message system-message';
+                msgDiv.innerHTML = `<div class="message-content">${data.text}</div>`;
+                document.getElementById('messages').appendChild(msgDiv);
+                scrollToBottom();
+            }
         });
         
-        // 用户列表更新
         socket.on('users_update', function(data) {
-            const userList = document.getElementById('userList');
-            const onlineCount = document.getElementById('onlineCount');
-            const userCount = document.getElementById('userCount');
-            
-            userList.innerHTML = data.users.map(user => 
-                `<div class="user-item">👤 ${escapeHtml(user)}</div>`
-            ).join('');
-            
-            const count = data.users.length;
-            onlineCount.textContent = count + '人在线';
-            userCount.textContent = count;
+            if (data.room === currentRoom || (!data.room && currentRoom === 'general')) {
+                const userList = document.getElementById('userList');
+                const onlineCount = document.getElementById('onlineCount');
+                const userCount = document.getElementById('userCount');
+                
+                const otherUsers = data.users.filter(u => u !== myUsername);
+                
+                userList.innerHTML = otherUsers.map(user => `
+                    <div class="user-item">
+                        <span>👤 ${escapeHtml(user)}</span>
+                        <button class="private-btn" onclick="startPrivateChat('${escapeHtml(user)}')">私聊</button>
+                    </div>
+                `).join('');
+                
+                const count = data.users.length;
+                onlineCount.textContent = count + '人在线';
+                userCount.textContent = count;
+            }
         });
         
-        // 添加消息到界面
-        function addMessage(data) {
+        socket.on('user_left', function(data) {
+            // 用户列表会自动更新
+        });
+        
+        socket.on('private_chat_started', function(data) {
+            const target = data.target;
+            privateChats[target] = data.room;
+            
+            // 切换到私聊
+            currentPrivateTarget = target;
+            currentRoom = data.room;
+            
+            // 更新UI
+            document.getElementById('roomTitle').textContent = `💬 与 ${target} 私聊`;
+            document.getElementById('backBtn').classList.remove('hidden');
+            document.getElementById('messages').innerHTML = '';
+            
+            // 添加标签
+            addChatTab(target, true);
+            
+            // 关闭侧边栏
+            toggleSidebar();
+        });
+        
+        socket.on('left_room', function(data) {
+            if (data.room !== 'general') {
+                // 离开私聊
+                currentRoom = 'general';
+                currentPrivateTarget = null;
+                document.getElementById('roomTitle').textContent = '💬 大厅';
+                document.getElementById('backBtn').classList.add('hidden');
+                removeChatTab(data.room);
+            }
+        });
+        
+        function startPrivateChat(target) {
+            socket.emit('request_private_chat', { target: target });
+        }
+        
+        function leavePrivateChat() {
+            if (currentPrivateTarget) {
+                socket.emit('leave_room', { room: currentRoom });
+                currentRoom = 'general';
+                currentPrivateTarget = null;
+                document.getElementById('roomTitle').textContent = '💬 大厅';
+                document.getElementById('backBtn').classList.add('hidden');
+                document.getElementById('messages').innerHTML = '';
+                removeAllPrivateTabs();
+            }
+        }
+        
+        function addChatTab(name, active = false) {
+            const tabs = document.getElementById('chatTabs');
+            const existing = Array.from(tabs.children).find(t => t.dataset.target === name);
+            if (existing) return;
+            
+            const tab = document.createElement('div');
+            tab.className = `chat-tab ${active ? 'active' : ''}`;
+            tab.dataset.target = name;
+            tab.innerHTML = `<span>${escapeHtml(name)}</span>`;
+            tab.onclick = () => switchToChat(name);
+            tabs.appendChild(tab);
+        }
+        
+        function removeChatTab(name) {
+            const tab = document.querySelector(`.chat-tab[data-target="${name}"]`);
+            if (tab) tab.remove();
+        }
+        
+        function removeAllPrivateTabs() {
+            document.getElementById('chatTabs').innerHTML = '';
+        }
+        
+        function switchToChat(name) {
+            if (name === 'general') {
+                leavePrivateChat();
+                return;
+            }
+            
+            // 切换到已有私聊
+            if (privateChats[name]) {
+                currentPrivateTarget = name;
+                currentRoom = privateChats[name];
+                document.getElementById('roomTitle').textContent = `💬 与 ${name} 私聊`;
+                document.getElementById('backBtn').classList.remove('hidden');
+                document.getElementById('messages').innerHTML = '';
+                
+                // 更新标签状态
+                document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+                const tab = document.querySelector(`.chat-tab[data-target="${name}"]`);
+                if (tab) tab.classList.add('active');
+            }
+        }
+        
+        function addMessage(data, isPrivate = false, isMyMessage = false, isSystem = false) {
             const messages = document.getElementById('messages');
-            const isMyMessage = data.username === myUsername;
             
             const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${isMyMessage ? 'my-message' : 'other-message'}`;
+            
+            if (isSystem) {
+                msgDiv.className = 'message system-message';
+            } else if (isPrivate) {
+                msgDiv.className = `message ${isMyMessage ? 'private-message' : 'private-received'}`;
+            } else {
+                msgDiv.className = `message ${isMyMessage ? 'my-message' : 'other-message'}`;
+            }
             
             let content = '';
             
@@ -629,12 +838,15 @@
                 </a>`;
             }
             
-            const displayName = isMyMessage ? '我' : data.username;
-            msgDiv.innerHTML = `
-                <div class="message-info">${escapeHtml(displayName)} · ${data.time}</div>
-                ${content}
-            `;
+            let html = '';
+            if (isPrivate && !isMyMessage) {
+                html = `<div class="private-tag">💌 私聊</div>`;
+            }
             
+            const displayName = isMyMessage ? '我' : data.username;
+            html += `<div class="message-info">${escapeHtml(displayName)} · ${data.time}</div>${content}`;
+            
+            msgDiv.innerHTML = html;
             messages.appendChild(msgDiv);
             scrollToBottom();
         }
@@ -660,10 +872,12 @@
             document.getElementById('imageModal').classList.remove('active');
         }
         
-        // 打字提示
         let typingTimeout;
         document.getElementById('messageInput').addEventListener('input', function() {
-            socket.emit('typing', {});
+            socket.emit('typing', { 
+                room: currentRoom,
+                target: currentPrivateTarget
+            });
         });
         
         socket.on('user_typing', function(data) {
