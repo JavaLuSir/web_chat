@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Chat - 在线聊天</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 900px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* 左侧用户列表 */
+        .sidebar {
+            width: 200px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .user-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .user-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        /* 右侧聊天区域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            padding: 20px;
+            background: #ecf0f1;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .chat-header h2 {
+            color: #2c3e50;
+        }
+        
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f5f5f5;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message.my-message {
+            align-items: flex-end;
+        }
+        
+        .message.other-message {
+            align-items: flex-start;
+        }
+        
+        .message.system-message {
+            align-items: center;
+        }
+        
+        .message-info {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+        }
+        
+        .my-message .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 3px;
+        }
+        
+        .other-message .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 3px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .system-message .message-content {
+            background: transparent;
+            color: #999;
+            font-size: 13px;
+        }
+        
+        .message-image {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .message-file {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .message-file:hover {
+            background: #f0f0f0;
+        }
+        
+        .message-file .file-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        /* 输入区域 */
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .input-area input[type="text"]:focus {
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        .file-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-btn input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 图片预览模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .typing-indicator {
+            padding: 5px 20px;
+            color: #999;
+            font-size: 12px;
+            height: 20px;
+        }
+        
+        /* 登录弹窗 */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .login-box input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            width: 200px;
+        }
+        
+        .login-box button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录弹窗 -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-box">
+            <h2>👋 加入聊天</h2>
+            <br>
+            <input type="text" id="usernameInput" placeholder="请输入你的名字" maxlength="20">
+            <br>
+            <button onclick="joinChat()">进入</button>
+        </div>
+    </div>
+    
+    <!-- 图片预览模态框 -->
+    <div class="modal" id="imageModal" onclick="closeModal()">
+        <img src="" alt="预览">
+    </div>
+    
+    <div class="container">
+        <!-- 左侧用户列表 -->
+        <div class="sidebar">
+            <h3>👥 在线用户</h3>
+            <div class="user-list" id="userList"></div>
+        </div>
+        
+        <!-- 右侧聊天区域 -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h2>💬 Web Chat</h2>
+            </div>
+            
+            <div class="messages" id="messages"></div>
+            
+            <div class="typing-indicator" id="typingIndicator"></div>
+            
+            <div class="input-area">
+                <div class="btn btn-secondary file-btn">
+                    📎
+                    <input type="file" id="fileInput" onchange="uploadFile(this)">
+                </div>
+                <input type="text" id="messageInput" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+                <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const socket = io();
+        let myUsername = '';
+        let mySid = '';
+        
+        // 登录
+        function joinChat() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) {
+                alert('请输入名字');
+                return;
+            }
+            myUsername = username;
+            document.getElementById('loginModal').classList.add('hidden');
+            socket.emit('join', { username: username });
+        }
+        
+        // 回车发送
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            socket.emit('chat_message', {
+                type: 'text',
+                text: text
+            });
+            input.value = '';
+        }
+        
+        // 上传文件
+        function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            input.value = ''; // 重置以便重复选择同一文件
+            
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                const messageType = data.is_image ? 'image' : 'file';
+                
+                socket.emit('chat_message', {
+                    type: messageType,
+                    url: data.url,
+                    filename: data.original_name
+                });
+            })
+            .catch(err => {
+                alert('上传失败: ' + err);
+            });
+        }
+        
+        // 接收消息
+        socket.on('message', function(data) {
+            addMessage(data);
+        });
+        
+        // 系统消息
+        socket.on('system_message', function(data) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message system-message';
+            msgDiv.innerHTML = `
+                <div class="message-content">${data.text}</div>
+            `;
+            document.getElementById('messages').appendChild(msgDiv);
+            scrollToBottom();
+        });
+        
+        // 用户列表更新
+        socket.on('users_update', function(data) {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = data.users.map(user => 
+                `<div class="user-item">👤 ${user}</div>`
+            ).join('');
+        });
+        
+        // 用户离开
+        socket.on('user_left', function(data) {
+            // 用户列表会通过 users_update 更新
+        });
+        
+        // 添加消息到界面
+        function addMessage(data) {
+            const messages = document.getElementById('messages');
+            const isMyMessage = data.username === myUsername;
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isMyMessage ? 'my-message' : 'other-message'}`;
+            
+            let content = '';
+            
+            if (data.type === 'text') {
+                content = `<div class="message-content">${escapeHtml(data.text)}</div>`;
+            } else if (data.type === 'image') {
+                content = `<div class="message-content">
+                    <img src="${data.url}" class="message-image" onclick="showImage('${data.url}')">
+                </div>`;
+            } else if (data.type === 'file') {
+                content = `<a href="${data.url}" class="message-file" target="_blank">
+                    <span class="file-icon">📄</span>
+                    <span>${data.filename || '文件'}</span>
+                </a>`;
+            }
+            
+            msgDiv.innerHTML = `
+                <div class="message-info">${data.username} · ${data.time}</div>
+                ${content}
+            `;
+            
+            messages.appendChild(msgDiv);
+            scrollToBottom();
+        }
+        
+        // 滚动到底部
+        function scrollToBottom() {
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 图片预览
+        function showImage(url) {
+            const modal = document.getElementById('imageModal');
+            modal.querySelector('img').src = url;
+            modal.classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+        
+        // 监听连接
+        socket.on('connect', function() {
+            mySid = socket.id;
+        });
+        
+        // 打字提示
+        let typingTimeout;
+        document.getElementById('messageInput').addEventListener('input', function() {
+            socket.emit('typing', {});
+        });
+        
+        socket.on('user_typing', function(data) {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.textContent = `${data.username} 正在输入...`;
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                indicator.textContent = '';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
